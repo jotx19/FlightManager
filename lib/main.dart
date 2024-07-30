@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
 import 'airplane_list_page.dart';
-import 'airplane_list_provider.dart'; // Import the provider
+import 'customer/customerPage.dart';
+import 'airplane_list_provider.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  // Initialize FFI
+  sqfliteFfiInit();
+  // Set the database factory
+  databaseFactory = databaseFactoryFfi;
+
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -15,7 +24,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Airplane Management System',
+        title: 'Management System',
         theme: ThemeData(
           brightness: Brightness.light,
           primaryColor: Colors.white,
@@ -63,7 +72,7 @@ class MainPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Airplane Management System',
+          'Management System',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
@@ -79,6 +88,22 @@ class MainPage extends StatelessWidget {
                 );
               },
               child: Text('Airplane List'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 20), // Space between buttons
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CustomerPage()),
+                );
+              },
+              child: Text('Customer List'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 foregroundColor: Colors.white,

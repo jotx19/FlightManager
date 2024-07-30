@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'airplane.dart';
 import 'airplane_list_provider.dart';
@@ -14,7 +15,12 @@ class AddAirplanePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Airplane'),
+        title: Text(
+          'Add Airplane',
+          style: GoogleFonts.poppins(color: Colors.black),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -24,7 +30,13 @@ class AddAirplanePage extends StatelessWidget {
             children: [
               TextFormField(
                 controller: _typeController,
-                decoration: InputDecoration(labelText: 'Type'),
+                decoration: InputDecoration(
+                  labelText: 'Type',
+                  labelStyle: GoogleFonts.poppins(color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the airplane type';
@@ -32,9 +44,16 @@ class AddAirplanePage extends StatelessWidget {
                   return null;
                 },
               ),
+              SizedBox(height: 20),
               TextFormField(
                 controller: _passengersController,
-                decoration: InputDecoration(labelText: 'Number of Passengers'),
+                decoration: InputDecoration(
+                  labelText: 'Number of Passengers',
+                  labelStyle: GoogleFonts.poppins(color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -43,9 +62,16 @@ class AddAirplanePage extends StatelessWidget {
                   return null;
                 },
               ),
+              SizedBox(height: 20),
               TextFormField(
                 controller: _speedController,
-                decoration: InputDecoration(labelText: 'Max Speed'),
+                decoration: InputDecoration(
+                  labelText: 'Max Speed',
+                  labelStyle: GoogleFonts.poppins(color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -54,9 +80,16 @@ class AddAirplanePage extends StatelessWidget {
                   return null;
                 },
               ),
+              SizedBox(height: 20),
               TextFormField(
                 controller: _rangeController,
-                decoration: InputDecoration(labelText: 'Range'),
+                decoration: InputDecoration(
+                  labelText: 'Range',
+                  labelStyle: GoogleFonts.poppins(color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -65,7 +98,7 @@ class AddAirplanePage extends StatelessWidget {
                   return null;
                 },
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 200),
               ElevatedButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
@@ -80,7 +113,16 @@ class AddAirplanePage extends StatelessWidget {
                     Navigator.pop(context);
                   }
                 },
-                child: Text('Add Airplane'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white, backgroundColor: Colors.black, padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(40.0),
+                  ), // foreground (text) color
+                ),
+                child: Text(
+                  'Add Airplane',
+                  style: GoogleFonts.poppins(fontSize: 18),
+                ),
               ),
             ],
           ),

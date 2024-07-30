@@ -41,44 +41,44 @@ class _AirplaneListPageState extends State<AirplaneListPage> {
           ),
         ],
       ),
-      body: Consumer<AirplaneListProvider>(
-        builder: (context, provider, child) {
-          if (provider.airplanes.isEmpty) {
-            return Center(
-              child: Text(
-                'No airplanes available.',
-                style: TextStyle(color: Colors.deepPurple, fontSize: 18),
-              ),
-            );
-          }
-          return Column(
-            children: [
-              Container(
-                padding: EdgeInsets.all(16.0),
-                color: Colors.white70,
-                child: Column(
-                  children: [
-                    Text(
-                      'List of Available Airplanes',
-                      style: GoogleFonts.spaceGrotesk(
-                        textStyle: TextStyle(color: Colors.black, fontSize: 30, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20), // Circular border radius
-                      child: Image.asset(
-                        'assets/aeroplane.jpeg',
-                        width: 400,
-                        height: 400,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ],
+      body: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.0),
+            color: Colors.white70,
+            child: Column(
+              children: [
+                Text(
+                  'List of Available Airplanes',
+                  style: GoogleFonts.spaceGrotesk(
+                    textStyle: TextStyle(color: Colors.black, fontSize: 30, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
+                SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/aeroplane.jpeg',
+                    width: 400,
+                    height: 400,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Consumer<AirplaneListProvider>(
+              builder: (context, provider, child) {
+                if (provider.airplanes.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No airplanes available.',
+                      style: TextStyle(color: Colors.black, fontSize: 18),
+                    ),
+                  );
+                }
+                return ListView.builder(
                   itemCount: provider.airplanes.length,
                   itemBuilder: (context, index) {
                     final airplane = provider.airplanes[index];
@@ -106,9 +106,9 @@ class _AirplaneListPageState extends State<AirplaneListPage> {
                         },
                         child: Card(
                           elevation: 5,
-                          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                          margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(60),
+                            borderRadius: BorderRadius.circular(25),
                           ),
                           color: Color(0xff2c3234),
                           child: ListTile(
@@ -130,11 +130,11 @@ class _AirplaneListPageState extends State<AirplaneListPage> {
                       ),
                     );
                   },
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
