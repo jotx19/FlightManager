@@ -26,7 +26,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
         _reservations.addAll(reservations);
       });
     } catch (e) {
-      print('Error loading reservations: $e');
+      _showSnackBar('Error loading reservations: $e');
     }
   }
 
@@ -40,12 +40,14 @@ class _ReservationListPageState extends State<ReservationListPage> {
             try {
               if (reservation.id == null) {
                 await _databaseService.addReservation(reservation);
+                _showSnackBar('Reservation added successfully.');
               } else {
                 await _databaseService.updateReservation(reservation);
+                _showSnackBar('Reservation updated successfully.');
               }
               _loadReservations();
             } catch (e) {
-              print('Error saving reservation: $e');
+              _showSnackBar('Error saving reservation: $e');
             }
           },
         ),
@@ -54,12 +56,42 @@ class _ReservationListPageState extends State<ReservationListPage> {
   }
 
   void _deleteReservation(int id) async {
-    try {
-      await _databaseService.deleteReservation(id);
-      _loadReservations();
-    } catch (e) {
-      print('Error deleting reservation: $e');
+    final confirmDelete = await _showDeleteConfirmationDialog();
+    if (confirmDelete) {
+      try {
+        await _databaseService.deleteReservation(id);
+        _showSnackBar('Reservation deleted successfully.');
+        _loadReservations();
+      } catch (e) {
+        _showSnackBar('Error deleting reservation: $e');
+      }
     }
+  }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete this reservation?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -69,25 +101,48 @@ class _ReservationListPageState extends State<ReservationListPage> {
         title: Text('Reservations List'),
         actions: [
           IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () => _navigateToReservationDetails(),
+            icon: Icon(Icons.info_outline),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('How to use'),
+                  content: Text(
+                      'This application allows you to manage a list of reservations. You can add, update, and delete reservations.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _reservations.isEmpty
+          ? Center(child: Text('No reservations available.'))
+          : ListView.builder(
         itemCount: _reservations.length,
         itemBuilder: (context, index) {
           final reservation = _reservations[index];
           return ListTile(
             title: Text(reservation.reservationName),
-            subtitle: Text('Customer ID: ${reservation.customerId}, Flight ID: ${reservation.flightId}, Date: ${reservation.reservationDate.toLocal()}'),
-            onTap: () => _navigateToReservationDetails(reservation: reservation),
+            subtitle: Text(
+                'Customer ID: ${reservation.customerId}, Flight ID: ${reservation.flightId}, Date: ${reservation.reservationDate.toLocal()}'),
+            onTap: () => _navigateToReservationDetails(
+                reservation: reservation),
             trailing: IconButton(
               icon: Icon(Icons.delete),
               onPressed: () => _deleteReservation(reservation.id!),
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToReservationDetails(),
+        child: Icon(Icons.add),
       ),
     );
   }

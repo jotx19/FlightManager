@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../flight/fdatabase.dart';
 import '../flight/flight.dart';
 import '../flight/flightDetailPage.dart';
-import '../flight/flightListPage.dart';
 
 class FlightsListPage extends StatefulWidget {
   @override
@@ -20,11 +19,15 @@ class _FlightsListPageState extends State<FlightsListPage> {
   }
 
   Future<void> _loadFlights() async {
-    final flights = await _databaseService.getFlights();
-    setState(() {
-      _flights.clear();
-      _flights.addAll(flights);
-    });
+    try {
+      final flights = await _databaseService.getFlights();
+      setState(() {
+        _flights.clear();
+        _flights.addAll(flights);
+      });
+    } catch (e) {
+      _showSnackBar('Error loading flights: $e');
+    }
   }
 
   void _navigateToFlightDetails({Flight? flight}) {
@@ -34,12 +37,18 @@ class _FlightsListPageState extends State<FlightsListPage> {
         builder: (context) => FlightDetailsPage(
           flight: flight,
           onSave: (Flight flight) async {
-            if (flight.id == null) {
-              await _databaseService.addFlight(flight);
-            } else {
-              await _databaseService.updateFlight(flight);
+            try {
+              if (flight.id == null) {
+                await _databaseService.addFlight(flight);
+                _showSnackBar('Flight added successfully.');
+              } else {
+                await _databaseService.updateFlight(flight);
+                _showSnackBar('Flight updated successfully.');
+              }
+              _loadFlights();
+            } catch (e) {
+              _showSnackBar('Error saving flight: $e');
             }
-            _loadFlights();
           },
         ),
       ),
@@ -47,8 +56,42 @@ class _FlightsListPageState extends State<FlightsListPage> {
   }
 
   void _deleteFlight(int id) async {
-    await _databaseService.deleteFlight(id);
-    _loadFlights();
+    final confirmDelete = await _showDeleteConfirmationDialog();
+    if (confirmDelete) {
+      try {
+        await _databaseService.deleteFlight(id);
+        _showSnackBar('Flight deleted successfully.');
+        _loadFlights();
+      } catch (e) {
+        _showSnackBar('Error deleting flight: $e');
+      }
+    }
+  }
+
+  Future<bool> _showDeleteConfirmationDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete this flight?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Delete'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -63,7 +106,9 @@ class _FlightsListPageState extends State<FlightsListPage> {
           ),
         ],
       ),
-      body: ListView.builder(
+      body: _flights.isEmpty
+          ? Center(child: Text('No flights available.'))
+          : ListView.builder(
         itemCount: _flights.length,
         itemBuilder: (context, index) {
           final flight = _flights[index];

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../customer/database.dart';
 import 'customer.dart';
-import 'database.dart';
 
 class CustomerPage extends StatefulWidget {
   @override
@@ -15,19 +16,47 @@ class _CustomerPageState extends State<CustomerPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   DateTime? _selectedBirthday;
+  final _storage = FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _loadCustomers();
+    _loadLastCustomer();
   }
 
   Future<void> _loadCustomers() async {
-    final customers = await _databaseService.getCustomers();
-    setState(() {
-      _customers.clear();
-      _customers.addAll(customers);
-    });
+    try {
+      final customers = await _databaseService.getCustomers();
+      setState(() {
+        _customers.clear();
+        _customers.addAll(customers);
+      });
+    } catch (e) {
+      _showSnackbar('Error loading customers: $e');
+    }
+  }
+
+  Future<void> _loadLastCustomer() async {
+    _firstNameController.text = await _storage.read(key: 'firstName') ?? '';
+    _lastNameController.text = await _storage.read(key: 'lastName') ?? '';
+    _addressController.text = await _storage.read(key: 'address') ?? '';
+    String? birthdayStr = await _storage.read(key: 'birthday');
+    if (birthdayStr != null) {
+      setState(() {
+        _selectedBirthday = DateTime.parse(birthdayStr);
+      });
+    }
+  }
+
+  Future<void> _saveLastCustomer() async {
+    await _storage.write(key: 'firstName', value: _firstNameController.text);
+    await _storage.write(key: 'lastName', value: _lastNameController.text);
+    await _storage.write(key: 'address', value: _addressController.text);
+    if (_selectedBirthday != null) {
+      await _storage.write(
+          key: 'birthday', value: _selectedBirthday!.toIso8601String());
+    }
   }
 
   void _showCustomerDialog({Customer? customer}) {
@@ -120,25 +149,32 @@ class _CustomerPageState extends State<CustomerPage> {
                 final address = _addressController.text;
                 final birthday = _selectedBirthday;
 
-                if (customer == null) {
-                  await _databaseService.addCustomer(Customer(
-                    firstName: firstName,
-                    lastName: lastName,
-                    address: address,
-                    birthday: birthday!,
-                  ));
-                } else {
-                  await _databaseService.updateCustomer(Customer(
-                    id: customer.id,
-                    firstName: firstName,
-                    lastName: lastName,
-                    address: address,
-                    birthday: birthday!,
-                  ));
-                }
+                try {
+                  if (customer == null) {
+                    await _databaseService.addCustomer(Customer(
+                      firstName: firstName,
+                      lastName: lastName,
+                      address: address,
+                      birthday: birthday!,
+                    ));
+                    _showSnackbar('Customer added successfully.');
+                  } else {
+                    await _databaseService.updateCustomer(Customer(
+                      id: customer.id,
+                      firstName: firstName,
+                      lastName: lastName,
+                      address: address,
+                      birthday: birthday!,
+                    ));
+                    _showSnackbar('Customer updated successfully.');
+                  }
 
-                _loadCustomers();
-                Navigator.of(context).pop();
+                  _saveLastCustomer();
+                  _loadCustomers();
+                  Navigator.of(context).pop();
+                } catch (e) {
+                  _showSnackbar('Error saving customer: $e');
+                }
               }
             },
             child: Text(customer == null ? 'Add' : 'Update'),
@@ -149,8 +185,19 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   void _deleteCustomer(int id) async {
-    await _databaseService.deleteCustomer(id);
-    _loadCustomers();
+    try {
+      await _databaseService.deleteCustomer(id);
+      _showSnackbar('Customer deleted successfully.');
+      _loadCustomers();
+    } catch (e) {
+      _showSnackbar('Error deleting customer: $e');
+    }
+  }
+
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override

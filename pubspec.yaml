@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  permission_handler: ^10.2.0
   sqflite_common_ffi: ^2.1.0
   encrypted_shared_preferences: ^3.0.1
   google_fonts: ^4.0.3
@@ -74,6 +75,12 @@ flutter:
 
   assets:
      - assets/aeroplane.jpeg
+     - assets/hero.jpeg
+     - assets/one.jpg
+     - assets/customer.jpeg
+     - assets/types.jpg
+     - assets/reservation.jpg
+     - assets/travel.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
