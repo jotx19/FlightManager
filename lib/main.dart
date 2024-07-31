@@ -4,12 +4,12 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:provider/provider.dart';
 import 'airplane_list_page.dart';
 import 'customer/customerPage.dart';
+import 'flight/flightListPage.dart';
+import 'reservation/reservationListPage.dart';
 import 'airplane_list_provider.dart';
 
 void main() {
-  // Initialize FFI
   sqfliteFfiInit();
-  // Set the database factory
   databaseFactory = databaseFactoryFfi;
 
   runApp(MyApp());
@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AirplaneListProvider()..loadAirplanes()),
+        // Add more providers if needed
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -111,7 +112,39 @@ class MainPage extends StatelessWidget {
                 textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
-            // Add other buttons for different parts of the project
+            SizedBox(height: 20), // Space between buttons
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FlightsListPage()),
+                );
+              },
+              child: Text('Flights List'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 20), // Space between buttons
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ReservationListPage()),
+                );
+              },
+              child: Text('Reservations List'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            // Add other buttons for different parts of the project if needed
           ],
         ),
       ),
