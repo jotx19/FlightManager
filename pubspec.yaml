@@ -82,6 +82,9 @@ flutter:
      - assets/types.jpg
      - assets/reservation.jpg
      - assets/travel.jpg
+     - assets/customer.jpg
+     - assets/service.jpg
+     - assets/planes.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
