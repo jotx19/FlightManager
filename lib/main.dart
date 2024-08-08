@@ -2,17 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'dart:io'; // To check the platform
+import 'airplane_list_provider.dart';
 import 'airplane_list_page.dart';
 import 'customer/customerPage.dart';
 import 'flight/flightListPage.dart';
 import 'reservation/reservationListPage.dart';
-import 'airplane_list_provider.dart';
 
 void main() {
+  // Platform-specific database initialization
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  } else if (Platform.isAndroid || Platform.isIOS) {
+    // Mobile platforms will use the default sqflite database factory
+    databaseFactory = databaseFactory;
+  }
+
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = Locale('en', 'US');
+
+  void _setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -61,21 +86,29 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: MainPage(),
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
+        locale: _locale,
         supportedLocales: [
           const Locale('en', 'US'), // American English
           const Locale('en', 'GB'), // British English
         ],
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: MainPage(
+          onLocaleChange: _setLocale,
+        ),
       ),
     );
   }
 }
 
 class MainPage extends StatefulWidget {
+  final Function(Locale) onLocaleChange;
+
+  MainPage({required this.onLocaleChange});
+
   @override
   _MainPageState createState() => _MainPageState();
 }
@@ -84,6 +117,7 @@ class _MainPageState extends State<MainPage> {
   final TextEditingController _searchController = TextEditingController();
   List<QuickAccessItem> _quickAccessItems = [];
   List<QuickAccessItem> _filteredItems = [];
+  String _selectedLanguage = 'en_US';
 
   @override
   void initState() {
@@ -114,9 +148,51 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
+  void _changeLanguage(String languageCode) {
+    Locale locale;
+    switch (languageCode) {
+      case 'en_US':
+        locale = Locale('en', 'US');
+        break;
+      case 'en_GB':
+        locale = Locale('en', 'GB');
+        break;
+      default:
+        locale = Locale('en', 'US');
+    }
+    widget.onLocaleChange(locale);
+    setState(() {
+      _selectedLanguage = languageCode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Flight Management System'),
+        actions: [
+          DropdownButton<String>(
+            value: _selectedLanguage,
+            icon: Icon(Icons.language, color: Colors.black),
+            items: <DropdownMenuItem<String>>[
+              DropdownMenuItem(
+                value: 'en_US',
+                child: Text('English (US)'),
+              ),
+              DropdownMenuItem(
+                value: 'en_GB',
+                child: Text('English (UK)'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                _changeLanguage(value);
+              }
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

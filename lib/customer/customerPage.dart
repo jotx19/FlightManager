@@ -4,6 +4,8 @@ import '../customer/database.dart';
 import 'customer.dart';
 
 class CustomerPage extends StatefulWidget {
+  const CustomerPage({super.key});
+
   @override
   _CustomerPageState createState() => _CustomerPageState();
 }
@@ -16,7 +18,8 @@ class _CustomerPageState extends State<CustomerPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   DateTime? _selectedBirthday;
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
+  bool _copyPrevious = false;
 
   @override
   void initState() {
@@ -38,14 +41,18 @@ class _CustomerPageState extends State<CustomerPage> {
   }
 
   Future<void> _loadLastCustomer() async {
-    _firstNameController.text = await _storage.read(key: 'firstName') ?? '';
-    _lastNameController.text = await _storage.read(key: 'lastName') ?? '';
-    _addressController.text = await _storage.read(key: 'address') ?? '';
-    String? birthdayStr = await _storage.read(key: 'birthday');
-    if (birthdayStr != null) {
-      setState(() {
-        _selectedBirthday = DateTime.parse(birthdayStr);
-      });
+    if (_copyPrevious) {
+      _firstNameController.text = await _storage.read(key: 'firstName') ?? '';
+      _lastNameController.text = await _storage.read(key: 'lastName') ?? '';
+      _addressController.text = await _storage.read(key: 'address') ?? '';
+      String? birthdayStr = await _storage.read(key: 'birthday');
+      if (birthdayStr != null) {
+        setState(() {
+          _selectedBirthday = DateTime.parse(birthdayStr);
+        });
+      }
+    } else {
+      _clearFields();
     }
   }
 
@@ -57,6 +64,15 @@ class _CustomerPageState extends State<CustomerPage> {
       await _storage.write(
           key: 'birthday', value: _selectedBirthday!.toIso8601String());
     }
+  }
+
+  void _clearFields() {
+    setState(() {
+      _firstNameController.clear();
+      _lastNameController.clear();
+      _addressController.clear();
+      _selectedBirthday = null;
+    });
   }
 
   void _showCustomerDialog({Customer? customer}) {
@@ -75,15 +91,32 @@ class _CustomerPageState extends State<CustomerPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(customer == null ? 'Add Customer' : 'Edit Customer'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          customer == null ? 'Add Customer' : 'Edit Customer',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (customer == null)
+                SwitchListTile(
+                  title: const Text('Copy from previous customer'),
+                  value: _copyPrevious,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _copyPrevious = value;
+                      _loadLastCustomer();
+                    });
+                  },
+                ),
               TextFormField(
                 controller: _firstNameController,
-                decoration: InputDecoration(labelText: 'First Name'),
+                decoration: const InputDecoration(labelText: 'First Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a first name';
@@ -91,9 +124,10 @@ class _CustomerPageState extends State<CustomerPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _lastNameController,
-                decoration: InputDecoration(labelText: 'Last Name'),
+                decoration: const InputDecoration(labelText: 'Last Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a last name';
@@ -101,9 +135,10 @@ class _CustomerPageState extends State<CustomerPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 10),
               TextFormField(
                 controller: _addressController,
-                decoration: InputDecoration(labelText: 'Address'),
+                decoration: const InputDecoration(labelText: 'Address'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter an address';
@@ -111,6 +146,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 10),
               TextButton(
                 onPressed: () async {
                   final date = await showDatePicker(
@@ -129,6 +165,7 @@ class _CustomerPageState extends State<CustomerPage> {
                   _selectedBirthday == null
                       ? 'Select Birthday'
                       : 'Birthday: ${_selectedBirthday!.toLocal()}'.split(' ')[0],
+                  style: const TextStyle(color: Colors.blue),
                 ),
               ),
             ],
@@ -139,7 +176,7 @@ class _CustomerPageState extends State<CustomerPage> {
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -204,47 +241,154 @@ class _CustomerPageState extends State<CustomerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Customer List'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.info),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('How to use'),
-                  content: Text(
-                      'This application allows you to manage a list of customers. You can add, update, and delete customer information.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text('OK'),
-                    ),
-                  ],
+        title: const Text(
+          'Customer List',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Customer Management',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
                 ),
-              );
-            },
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('Main Page'),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                Navigator.pop(context); // Navigate to the main page
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help),
+              title: const Text('Help'),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('How to use'),
+                    content: const Text(
+                        'This application allows you to manage a list of customers. You can add, update, and delete customer information.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Customer Service'),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Customer Service'),
+                    content: Image.asset(
+                      'assets/customer.jpg',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          // Image at the top
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'assets/service.jpg',
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ListView.builder(
+                itemCount: _customers.length,
+                itemBuilder: (context, index) {
+                  final customer = _customers[index];
+                  return Dismissible(
+                    key: Key(customer.id.toString()),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      _deleteCustomer(customer.id!);
+                    },
+                    background: Container(
+                      color: Colors.redAccent,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 10),
+                      elevation: 5,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 15),
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.grey[200],
+                          child: Text(
+                            customer.firstName[0],
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 24),
+                          ),
+                        ),
+                        title: Text(
+                          '${customer.firstName} ${customer.lastName}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(customer.address),
+                        onTap: () => _showCustomerDialog(customer: customer),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () =>
+                              _showCustomerDialog(customer: customer),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: _customers.length,
-        itemBuilder: (context, index) {
-          final customer = _customers[index];
-          return ListTile(
-            title: Text('${customer.firstName} ${customer.lastName}'),
-            subtitle: Text(customer.address),
-            onTap: () => _showCustomerDialog(customer: customer),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => _deleteCustomer(customer.id!),
-            ),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCustomerDialog(),
-        child: Icon(Icons.add),
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add),
       ),
     );
   }

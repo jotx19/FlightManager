@@ -1,15 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'airplane.dart';
 import 'airplane_list_provider.dart';
+import 'dart:convert';
 
-class AddAirplanePage extends StatelessWidget {
+class AddAirplanePage extends StatefulWidget {
+  @override
+  _AddAirplanePageState createState() => _AddAirplanePageState();
+}
+
+class _AddAirplanePageState extends State<AddAirplanePage> {
   final _formKey = GlobalKey<FormState>();
   final _typeController = TextEditingController();
   final _passengersController = TextEditingController();
   final _speedController = TextEditingController();
   final _rangeController = TextEditingController();
+  final EncryptedSharedPreferences _prefs = EncryptedSharedPreferences();
+
+  bool _copyPrevious = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreviousAirplane(); // Load data if available
+  }
+
+  void _loadPreviousAirplane() async {
+    if (_copyPrevious) {
+      String? airplaneData = await _prefs.getString('previous_airplane');
+      if (airplaneData != null) {
+        Airplane previousAirplane = Airplane.fromJson(jsonDecode(airplaneData));
+        setState(() {
+          _typeController.text = previousAirplane.type;
+          _passengersController.text = previousAirplane.numberOfPassengers.toString();
+          _speedController.text = previousAirplane.maxSpeed.toString();
+          _rangeController.text = previousAirplane.range.toString();
+        });
+      }
+    } else {
+      _clearFields();
+    }
+  }
+
+  void _clearFields() {
+    setState(() {
+      _typeController.clear();
+      _passengersController.clear();
+      _speedController.clear();
+      _rangeController.clear();
+    });
+  }
+
+  void _saveAirplane() async {
+    if (_formKey.currentState!.validate()) {
+      final airplane = Airplane(
+        type: _typeController.text,
+        numberOfPassengers: int.parse(_passengersController.text),
+        maxSpeed: double.parse(_speedController.text),
+        range: double.parse(_rangeController.text),
+      );
+
+      // Save the airplane data using Provider
+      Provider.of<AirplaneListProvider>(context, listen: false).addAirplane(airplane);
+
+      // Save the airplane details to EncryptedSharedPreferences
+      await _prefs.setString('previous_airplane', jsonEncode(airplane.toJson()));
+
+      Navigator.pop(context); // Go back after saving
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +90,17 @@ class AddAirplanePage extends StatelessWidget {
             key: _formKey,
             child: Column(
               children: [
+                SwitchListTile(
+                  title: Text('Copy from previous airplane'),
+                  value: _copyPrevious,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _copyPrevious = value;
+                      _loadPreviousAirplane();
+                    });
+                  },
+                ),
+                SizedBox(height: 20),
                 TextFormField(
                   controller: _typeController,
                   decoration: InputDecoration(
@@ -101,19 +173,7 @@ class AddAirplanePage extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      final airplane = Airplane(
-                        type: _typeController.text,
-                        numberOfPassengers: int.parse(_passengersController.text),
-                        maxSpeed: double.parse(_speedController.text),
-                        range: double.parse(_rangeController.text),
-                      );
-                      Provider.of<AirplaneListProvider>(context, listen: false)
-                          .addAirplane(airplane);
-                      Navigator.pop(context);
-                    }
-                  },
+                  onPressed: _saveAirplane,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.black,
